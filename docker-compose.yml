@@ -1,0 +1,17 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: pcrm
+      POSTGRES_PASSWORD: pcrm_password
+      POSTGRES_DB: pcrm
+    ports:
+      - "5432:5432"
+    volumes:
+      - pcrm_data:/var/lib/postgresql/data
+
+volumes:
+  pcrm_data:
