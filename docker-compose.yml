@@ -1,0 +1,17 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: pcrm-postgres
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_USER: pcrm
+      POSTGRES_PASSWORD: pcrm
+      POSTGRES_DB: pcrm
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
