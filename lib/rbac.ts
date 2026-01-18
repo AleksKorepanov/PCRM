@@ -44,6 +44,10 @@ export function canCreateRecords(role: Role): boolean {
   return roleAtLeast(role, "member");
 }
 
+export function canEditContacts(role: Role): boolean {
+  return roleAtLeast(role, "assistant");
+}
+
 export function canCoordinateIntroductions(role: Role): boolean {
   return roleAtLeast(role, "assistant");
 }

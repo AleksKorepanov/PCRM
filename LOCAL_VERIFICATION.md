@@ -143,3 +143,43 @@ npm run typecheck
 ```bash
 npm test
 ```
+
+## P06
+
+> Note: The cloud environment may block installs; commands below are the intended local checks.
+
+1. Start services:
+
+```bash
+docker compose up -d
+```
+
+2. Install dependencies:
+
+```bash
+npm install
+```
+
+3. Database migrations:
+
+```bash
+npm run db:migrate
+```
+
+4. Run tests:
+
+```bash
+npm test
+```
+
+5. Run lint:
+
+```bash
+npm run lint
+```
+
+6. Run typecheck:
+
+```bash
+npm run typecheck
+```
