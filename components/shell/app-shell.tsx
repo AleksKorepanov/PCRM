@@ -10,7 +10,14 @@ import {
 import { ShellContext } from "@/lib/shell-data";
 import { TextCopy } from "@/lib/text";
 
-const navItems = [
+type NavItem = {
+  key: keyof TextCopy["nav"];
+  href: string;
+  minRole: "owner" | "admin" | "member" | "assistant" | "read-only";
+  hideIfRestricted?: boolean;
+};
+
+const navItems: NavItem[] = [
   { key: "dashboard", href: "/dashboard", minRole: "read-only" },
   { key: "contacts", href: "/contacts", minRole: "read-only" },
   { key: "orgs", href: "/orgs", minRole: "read-only" },
@@ -26,7 +33,7 @@ const navItems = [
     minRole: "admin",
     hideIfRestricted: true,
   },
-] as const;
+];
 
 type AppShellProps = ShellContext & {
   text: TextCopy;

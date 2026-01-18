@@ -1,5 +1,6 @@
 import {
   canChangeRoles,
+  canEditContacts,
   canInviteMembers,
   canViewAudit,
   isValidRole,
@@ -33,5 +34,11 @@ describe("rbac", () => {
     expect(canViewAudit("owner")).toBe(true);
     expect(canViewAudit("assistant")).toBe(true);
     expect(canViewAudit("member")).toBe(false);
+  });
+
+  it("limits contact editing", () => {
+    expect(canEditContacts("assistant")).toBe(true);
+    expect(canEditContacts("member")).toBe(true);
+    expect(canEditContacts("read-only")).toBe(false);
   });
 });

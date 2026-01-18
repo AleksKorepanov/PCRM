@@ -1,6 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
+import React from "react";
+
 export default function HomePage() {
   return (
     <main className="px-6 py-10 sm:px-10">

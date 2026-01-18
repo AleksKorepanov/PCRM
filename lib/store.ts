@@ -77,7 +77,10 @@ function initializeStore(): Store {
 }
 
 function getStore(): Store {
-  const globalStore = globalThis as Record<string | symbol, Store | undefined>;
+  const globalStore = globalThis as unknown as Record<
+    string | symbol,
+    Store | undefined
+  >;
   if (!globalStore[storeKey]) {
     globalStore[storeKey] = initializeStore();
   }
