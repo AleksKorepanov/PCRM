@@ -22,5 +22,7 @@ export async function POST(request: Request): Promise<NextResponse> {
 
   startSession(user.id);
 
-  return NextResponse.json({ user: { id: user.id, email: user.email } });
+  return NextResponse.json({
+    user: { id: user.id, email: user.email, locale: user.locale },
+  });
 }

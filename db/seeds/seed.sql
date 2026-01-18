@@ -1,5 +1,5 @@
-INSERT INTO users (id, email, full_name, password_hash)
-VALUES (gen_random_uuid(), 'owner@example.com', 'Workspace Owner', 'local-only-placeholder')
+INSERT INTO users (id, email, full_name, password_hash, locale)
+VALUES (gen_random_uuid(), 'owner@example.com', 'Workspace Owner', 'local-only-placeholder', 'ru')
 ON CONFLICT (email) DO NOTHING;
 
 WITH owner_user AS (
