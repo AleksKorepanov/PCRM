@@ -39,6 +39,10 @@ npm test
 npm run format
 ```
 
+## Локальная проверка
+
+Полный список команд для проверки epics см. в `LOCAL_VERIFICATION.md`.
+
 ## Архитектура
 
 - App Router (`/app`)
@@ -48,4 +52,3 @@ npm run format
 ## База данных
 
 Для локальной разработки используется `docker-compose.yml`, создающий Postgres с именем базы `pcrm`.
-
