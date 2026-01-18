@@ -10,7 +10,10 @@
     "lint": "next lint",
     "format": "prettier --write .",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "db:migrate": "bash db/scripts/migrate.sh",
+    "db:reset": "bash db/scripts/reset.sh",
+    "db:seed": "bash db/scripts/seed.sh"
   },
   "dependencies": {
     "clsx": "^2.1.1",
