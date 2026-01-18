@@ -87,3 +87,31 @@ npm run lint
 ```bash
 npm run typecheck
 ```
+
+## P04
+
+> Note: The cloud environment may block installs; commands below are the intended local checks.
+
+1. Install dependencies:
+
+```bash
+npm install
+```
+
+2. Run lint:
+
+```bash
+npm run lint
+```
+
+3. Run typecheck:
+
+```bash
+npm run typecheck
+```
+
+4. Run tests:
+
+```bash
+npm test
+```

@@ -39,3 +39,31 @@ export function canViewAudit(role: Role): boolean {
 export function canAccessWorkspace(role: Role): boolean {
   return roleAtLeast(role, "read-only");
 }
+
+export function canCreateRecords(role: Role): boolean {
+  return roleAtLeast(role, "member");
+}
+
+export function canCoordinateIntroductions(role: Role): boolean {
+  return roleAtLeast(role, "assistant");
+}
+
+export function canManageNeedsOffers(role: Role): boolean {
+  return roleAtLeast(role, "assistant");
+}
+
+export function canManageCommitments(role: Role): boolean {
+  return roleAtLeast(role, "assistant");
+}
+
+export function canRunResearch(role: Role): boolean {
+  return roleAtLeast(role, "member");
+}
+
+export function canViewAnalytics(role: Role): boolean {
+  return roleAtLeast(role, "admin");
+}
+
+export function canManageSettings(role: Role): boolean {
+  return roleAtLeast(role, "admin");
+}
