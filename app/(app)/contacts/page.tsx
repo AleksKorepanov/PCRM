@@ -1,5 +1,7 @@
 import { ContactForm } from "@/components/contacts/contact-form";
 import { ContactsFilters } from "@/components/contacts/contacts-filters";
+import { ContactsImportPanel } from "@/components/contacts/contacts-import-panel";
+import { ContactsMergePanel } from "@/components/contacts/contacts-merge-panel";
 import { ContactsTable } from "@/components/contacts/contacts-table";
 import { PageHeader } from "@/components/shell/page-header";
 import { Button } from "@/components/ui/button";
@@ -165,6 +167,19 @@ export default function ContactsPage() {
             perPage={perPage}
             total={total}
           />
+          <div className="grid gap-6 xl:grid-cols-2">
+            <ContactsImportPanel
+              locale={locale}
+              workspaceId={activeWorkspaceId}
+              canEdit={canEdit}
+            />
+            <ContactsMergePanel
+              locale={locale}
+              workspaceId={activeWorkspaceId}
+              canEdit={canEdit}
+              contacts={contacts}
+            />
+          </div>
         </div>
         <ContactForm locale={locale} canEdit={canEdit} />
       </div>

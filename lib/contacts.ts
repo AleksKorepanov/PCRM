@@ -1,5 +1,7 @@
 import { randomUUID } from "crypto";
 
+import { reassignContactRelations, restoreRelations, snapshotRelations } from "@/lib/relations";
+
 export type ContactVisibility = "public" | "private";
 
 export type ContactChannelType = "phone" | "email" | "telegram" | "whatsapp";
@@ -51,6 +53,15 @@ export type ContactFilters = {
 };
 
 export type ContactSort = "last_interaction" | "trust_score" | "name";
+
+export type ContactMergeField =
+  | "name"
+  | "city"
+  | "tier"
+  | "trustScore"
+  | "introducedBy";
+
+export type ContactMergeSelection = Partial<Record<ContactMergeField, string>>;
 
 export type ListContactsParams = {
   workspaceId: string;
@@ -124,6 +135,44 @@ function inRange(value: number | undefined, min?: number, max?: number): boolean
     return false;
   }
   return true;
+}
+
+function uniqueList(values: string[]): string[] {
+  const seen = new Set<string>();
+  const result: string[] = [];
+  values.forEach((value) => {
+    const normalized = value.trim();
+    if (!normalized) {
+      return;
+    }
+    const key = normalized.toLowerCase();
+    if (!seen.has(key)) {
+      seen.add(key);
+      result.push(normalized);
+    }
+  });
+  return result;
+}
+
+function mergeChannels(existing: ContactChannel[], incoming: ContactChannel[]): ContactChannel[] {
+  const byKey = new Map<string, ContactChannel>();
+  const all = [...existing, ...incoming];
+  all.forEach((channel) => {
+    const key = `${channel.type}:${normalizeString(channel.value)}`;
+    const current = byKey.get(key);
+    if (!current) {
+      byKey.set(key, channel);
+      return;
+    }
+    if (!current.isPrimary && channel.isPrimary) {
+      byKey.set(key, { ...current, isPrimary: true });
+    }
+  });
+  const merged = Array.from(byKey.values());
+  if (!merged.some((channel) => channel.isPrimary) && merged.length > 0) {
+    merged[0] = { ...merged[0], isPrimary: true };
+  }
+  return merged;
 }
 
 export function createContact(params: {
@@ -291,6 +340,97 @@ export function listContacts(params: ListContactsParams): ListContactsResult {
     page,
     perPage,
   };
+}
+
+export function listAllContacts(workspaceId: string): Contact[] {
+  const store = getContactsStore();
+  return Array.from(store.contacts.values()).filter(
+    (contact) => contact.workspaceId === workspaceId
+  );
+}
+
+export function mergeContacts(params: {
+  workspaceId: string;
+  survivorId: string;
+  sourceIds: string[];
+  selections?: ContactMergeSelection;
+}): Contact | undefined {
+  const store = getContactsStore();
+  const { workspaceId, survivorId, selections } = params;
+  const sourceIds = params.sourceIds.filter((id) => id !== survivorId);
+  if (sourceIds.length === 0) {
+    return undefined;
+  }
+
+  const survivor = store.contacts.get(survivorId);
+  if (!survivor || survivor.workspaceId !== workspaceId) {
+    return undefined;
+  }
+
+  const sources = sourceIds
+    .map((id) => store.contacts.get(id))
+    .filter((contact): contact is Contact => Boolean(contact));
+
+  if (sources.length !== sourceIds.length) {
+    return undefined;
+  }
+
+  if (!sources.every((contact) => contact.workspaceId === workspaceId)) {
+    return undefined;
+  }
+
+  const contactSnapshot = new Map(store.contacts);
+  const relationsSnapshot = snapshotRelations();
+
+  const fieldSource = (field: ContactMergeField): Contact => {
+    const selectedId = selections?.[field];
+    const selected = selectedId ? store.contacts.get(selectedId) : undefined;
+    return selected && selected.workspaceId === workspaceId ? selected : survivor;
+  };
+
+  const merged: Contact = {
+    ...survivor,
+    name: fieldSource("name").name,
+    city: fieldSource("city").city,
+    tier: fieldSource("tier").tier,
+    trustScore: fieldSource("trustScore").trustScore,
+    introducedBy: fieldSource("introducedBy").introducedBy,
+    aliases: uniqueList([survivor.aliases, ...sources.map((item) => item.aliases)].flat()),
+    tags: uniqueList([survivor.tags, ...sources.map((item) => item.tags)].flat()),
+    organizations: uniqueList(
+      [survivor.organizations, ...sources.map((item) => item.organizations)].flat()
+    ),
+    communities: uniqueList(
+      [survivor.communities, ...sources.map((item) => item.communities)].flat()
+    ),
+    channels: mergeChannels(
+      survivor.channels,
+      sources.flatMap((item) => item.channels)
+    ),
+    notes: [
+      ...survivor.notes,
+      ...sources.flatMap((item) => item.notes),
+    ],
+    updatedAt: nowIso(),
+  };
+
+  store.contacts.set(survivor.id, merged);
+  sources.forEach((contact) => {
+    store.contacts.delete(contact.id);
+  });
+  sources.forEach((contact) => {
+    reassignContactRelations({
+      workspaceId,
+      fromContactId: contact.id,
+      toContactId: survivor.id,
+    });
+  });
+  if (!store.contacts.has(survivor.id)) {
+    store.contacts = contactSnapshot;
+    restoreRelations(relationsSnapshot);
+    return undefined;
+  }
+  return merged;
 }
 
 export function filterNotesForRole(contact: Contact, role: string): Contact {
