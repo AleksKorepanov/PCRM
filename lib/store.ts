@@ -7,6 +7,7 @@ export type User = {
   email: string;
   passwordHash: string;
   passwordSalt: string;
+  locale: "ru" | "en";
   createdAt: string;
 };
 
@@ -91,6 +92,7 @@ export function createUser(params: {
   email: string;
   passwordHash: string;
   passwordSalt: string;
+  locale?: "ru" | "en";
 }): User {
   const store = getStore();
   const user: User = {
@@ -98,6 +100,7 @@ export function createUser(params: {
     email: params.email,
     passwordHash: params.passwordHash,
     passwordSalt: params.passwordSalt,
+    locale: params.locale ?? "ru",
     createdAt: nowIso(),
   };
   store.users.set(user.id, user);
@@ -112,6 +115,20 @@ export function findUserByEmail(email: string): User | undefined {
 export function findUserById(userId: string): User | undefined {
   const store = getStore();
   return store.users.get(userId);
+}
+
+export function updateUserLocale(
+  userId: string,
+  locale: "ru" | "en"
+): User | undefined {
+  const store = getStore();
+  const user = store.users.get(userId);
+  if (!user) {
+    return undefined;
+  }
+  const updated = { ...user, locale };
+  store.users.set(userId, updated);
+  return updated;
 }
 
 export function createSession(userId: string, ttlDays = 7): Session {

@@ -16,6 +16,19 @@ type TextCopy = {
   workspaceSwitcherHelper: string;
   userMenuLabel: string;
   userMenuDescription: string;
+  profile: {
+    localeTitle: string;
+    localeDescription: string;
+    localeLabel: string;
+    localeSave: string;
+    localeSaving: string;
+    localeSaved: string;
+    localeError: string;
+    localeOptions: {
+      ru: string;
+      en: string;
+    };
+  };
   shell: {
     roleAwareNavNote: string;
   };
@@ -69,6 +82,20 @@ const text: Record<Locale, TextCopy> = {
     workspaceSwitcherHelper: "Выберите активное пространство",
     userMenuLabel: "Пользователь",
     userMenuDescription: "Настройки профиля и доступа",
+    profile: {
+      localeTitle: "Язык интерфейса",
+      localeDescription:
+        "Выберите язык интерфейса. Настройка сохраняется в профиле пользователя.",
+      localeLabel: "Выбранный язык",
+      localeSave: "Сохранить",
+      localeSaving: "Сохраняем...",
+      localeSaved: "Сохранено",
+      localeError: "Не удалось сохранить",
+      localeOptions: {
+        ru: "Русский",
+        en: "English",
+      },
+    },
     shell: {
       roleAwareNavNote: "Навигация учитывает роль пользователя.",
     },
@@ -187,6 +214,20 @@ const text: Record<Locale, TextCopy> = {
     workspaceSwitcherHelper: "Select active workspace",
     userMenuLabel: "User",
     userMenuDescription: "Profile and access settings",
+    profile: {
+      localeTitle: "Interface language",
+      localeDescription:
+        "Choose the interface language. This preference is saved to the user profile.",
+      localeLabel: "Selected language",
+      localeSave: "Save",
+      localeSaving: "Saving...",
+      localeSaved: "Saved",
+      localeError: "Save failed",
+      localeOptions: {
+        ru: "Russian",
+        en: "English",
+      },
+    },
     shell: {
       roleAwareNavNote: "Navigation adapts to the user's role.",
     },
@@ -310,7 +351,37 @@ export function resolveLocale(value?: string | null): Locale {
 }
 
 export function getText(locale: Locale): TextCopy {
-  return text[locale] ?? text.ru;
+  return mergeText(text.ru, text[locale]);
 }
 
 export type { TextCopy };
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+export function mergeText<T>(base: T, overrides?: Partial<T>): T {
+  if (!overrides) {
+    return base;
+  }
+  if (!isRecord(base) || !isRecord(overrides)) {
+    return (overrides ?? base) as T;
+  }
+  const result: Record<string, unknown> = {};
+  const keys = new Set([
+    ...Object.keys(base),
+    ...Object.keys(overrides),
+  ]);
+  keys.forEach((key) => {
+    const baseValue = (base as Record<string, unknown>)[key];
+    const overrideValue = (overrides as Record<string, unknown>)[key];
+    if (isRecord(baseValue) && isRecord(overrideValue)) {
+      result[key] = mergeText(baseValue, overrideValue);
+    } else if (overrideValue !== undefined) {
+      result[key] = overrideValue;
+    } else {
+      result[key] = baseValue;
+    }
+  });
+  return result as T;
+}

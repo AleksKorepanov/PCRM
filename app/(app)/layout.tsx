@@ -1,15 +1,14 @@
-import { headers } from "next/headers";
-
 import { AppShell } from "@/components/shell/app-shell";
+import { getUserLocale } from "@/lib/locale";
 import { getShellContext } from "@/lib/shell-data";
-import { getText, resolveLocale } from "@/lib/text";
+import { getText } from "@/lib/text";
 
 export default function AppLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const locale = resolveLocale(headers().get("accept-language"));
+  const locale = getUserLocale();
   const text = getText(locale);
   const shell = getShellContext();
 
