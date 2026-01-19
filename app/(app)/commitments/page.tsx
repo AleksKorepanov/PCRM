@@ -1,7 +1,9 @@
+import type { CommitmentCardData } from "@/components/commitments/commitment-card";
 import { CommitmentsBoard } from "@/components/commitments/commitments-board";
 import { PageHeader } from "@/components/shell/page-header";
 import { Button } from "@/components/ui/button";
 import { createContact, getContact, listAllContacts } from "@/lib/contacts";
+import type { CommitmentPartyRole, CommitmentWithParties } from "@/lib/commitments";
 import { createCommitment, isCommitmentOverdue, listCommitments } from "@/lib/commitments";
 import { getUserLocale } from "@/lib/locale";
 import { canManageCommitments } from "@/lib/rbac";
@@ -88,6 +90,48 @@ function ensureSampleCommitments(workspaceId: string): void {
   });
 }
 
+function buildPartyNameBuckets(
+  workspaceId: string,
+  parties: CommitmentWithParties["parties"]
+): Record<CommitmentPartyRole, string[]> {
+  return parties.reduce(
+    (acc, party) => {
+      const contact = getContact({
+        workspaceId,
+        contactId: party.contactId,
+      });
+      const name = contact?.name ?? party.contactId;
+      acc[party.role].push(name);
+      return acc;
+    },
+    {
+      owed_by: [] as string[],
+      owes_to: [] as string[],
+      observer: [] as string[],
+    }
+  );
+}
+
+function buildCommitmentCardData(
+  workspaceId: string,
+  commitment: CommitmentWithParties
+): CommitmentCardData {
+  const partyNames = buildPartyNameBuckets(workspaceId, commitment.parties);
+
+  return {
+    id: commitment.id,
+    title: commitment.title,
+    description: commitment.description,
+    status: commitment.status,
+    dueAt: commitment.dueAt,
+    closedAt: commitment.closedAt,
+    isOverdue: isCommitmentOverdue(commitment),
+    owedBy: partyNames.owed_by,
+    owesTo: partyNames.owes_to,
+    observers: partyNames.observer,
+  };
+}
+
 export default function CommitmentsPage() {
   const locale = getUserLocale();
   const text = getText(locale);
@@ -97,37 +141,7 @@ export default function CommitmentsPage() {
 
   ensureSampleCommitments(activeWorkspaceId);
   const commitments = listCommitments({ workspaceId: activeWorkspaceId }).map(
-    (commitment) => {
-      const partyNames = commitment.parties.reduce(
-        (acc, party) => {
-          const contact = getContact({
-            workspaceId: activeWorkspaceId,
-            contactId: party.contactId,
-          });
-          const name = contact?.name ?? party.contactId;
-          acc[party.role].push(name);
-          return acc;
-        },
-        {
-          owed_by: [] as string[],
-          owes_to: [] as string[],
-          observer: [] as string[],
-        }
-      );
-
-      return {
-        id: commitment.id,
-        title: commitment.title,
-        description: commitment.description,
-        status: commitment.status,
-        dueAt: commitment.dueAt,
-        closedAt: commitment.closedAt,
-        isOverdue: isCommitmentOverdue(commitment),
-        owedBy: partyNames.owed_by,
-        owesTo: partyNames.owes_to,
-        observers: partyNames.observer,
-      };
-    }
+    (commitment) => buildCommitmentCardData(activeWorkspaceId, commitment)
   );
 
   return (
