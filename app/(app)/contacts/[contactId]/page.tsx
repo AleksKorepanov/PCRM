@@ -6,6 +6,12 @@ import {
 import { PageHeader } from "@/components/shell/page-header";
 import { Button } from "@/components/ui/button";
 import { createContact, getContact } from "@/lib/contacts";
+import {
+  createCommitment,
+  getCommitmentReliability,
+  isCommitmentOverdue,
+  listCommitmentsForContact,
+} from "@/lib/commitments";
 import { createFollowup, createInteraction, listInteractions } from "@/lib/interactions";
 import { getUserLocale } from "@/lib/locale";
 import { canEditContacts } from "@/lib/rbac";
@@ -102,6 +108,56 @@ function ensureSampleInteractions(
   });
 }
 
+function ensureSampleCommitments(workspaceId: string, contactId: string): void {
+  const existing = listCommitmentsForContact({
+    workspaceId,
+    contactId,
+    roles: ["owed_by", "owes_to", "observer"],
+  });
+  if (existing.length > 0) {
+    return;
+  }
+
+  const partner = createContact({
+    workspaceId,
+    name: "Алексей Власов",
+    city: "Москва",
+    tier: "A",
+    trustScore: 84,
+    aliases: ["Алексей"],
+    tags: ["партнер"],
+    organizations: ["Bridge Ventures"],
+    communities: ["Investor Club"],
+    channels: [],
+    notes: [],
+  });
+
+  createCommitment({
+    workspaceId,
+    title: "Подготовить коммерческое предложение",
+    description: "Согласовать детали и отправить партнеру.",
+    status: "open",
+    dueAt: "2024-02-10T12:00:00Z",
+    parties: [
+      { contactId, role: "owed_by" },
+      { contactId: partner.id, role: "owes_to" },
+    ],
+  });
+
+  createCommitment({
+    workspaceId,
+    title: "Отправить еженедельный отчет",
+    description: "Доставить апдейт по KPI.",
+    status: "fulfilled",
+    dueAt: "2024-02-05T09:00:00Z",
+    closedAt: "2024-02-04T10:00:00Z",
+    parties: [
+      { contactId, role: "owed_by" },
+      { contactId: partner.id, role: "observer" },
+    ],
+  });
+}
+
 type ContactProfilePageProps = {
   params: { contactId: string };
 };
@@ -113,6 +169,7 @@ export default function ContactProfilePage({ params }: ContactProfilePageProps) 
   const canEdit = canEditContacts(user.role);
   const contact = ensureContact(activeWorkspaceId, params.contactId);
   ensureSampleInteractions(activeWorkspaceId, contact.id, user.email);
+  ensureSampleCommitments(activeWorkspaceId, contact.id);
 
   const interactions = listInteractions({
     workspaceId: activeWorkspaceId,
@@ -142,6 +199,47 @@ export default function ContactProfilePage({ params }: ContactProfilePageProps) 
     ),
   }));
 
+  const commitments = listCommitmentsForContact({
+    workspaceId: activeWorkspaceId,
+    contactId: contact.id,
+    roles: ["owed_by", "owes_to", "observer"],
+  }).map((commitment) => {
+    const partyNames = commitment.parties.reduce(
+      (acc, party) => {
+        const partyContact = getContact({
+          workspaceId: activeWorkspaceId,
+          contactId: party.contactId,
+        });
+        const name = partyContact?.name ?? party.contactId;
+        acc[party.role].push(name);
+        return acc;
+      },
+      {
+        owed_by: [] as string[],
+        owes_to: [] as string[],
+        observer: [] as string[],
+      }
+    );
+
+    return {
+      id: commitment.id,
+      title: commitment.title,
+      description: commitment.description,
+      status: commitment.status,
+      dueAt: commitment.dueAt,
+      closedAt: commitment.closedAt,
+      isOverdue: isCommitmentOverdue(commitment),
+      owedBy: partyNames.owed_by,
+      owesTo: partyNames.owes_to,
+      observers: partyNames.observer,
+    };
+  });
+
+  const reliability = getCommitmentReliability({
+    workspaceId: activeWorkspaceId,
+    contactId: contact.id,
+  });
+
   const title =
     locale === "ru"
       ? "Профиль контакта"
@@ -162,8 +260,12 @@ export default function ContactProfilePage({ params }: ContactProfilePageProps) 
           </Button>
         }
       />
-      <ContactProfileHeader contact={contact} locale={locale} />
-      <ContactProfileTabs locale={locale} interactions={timelineInteractions} />
+      <ContactProfileHeader contact={contact} locale={locale} reliability={reliability} />
+      <ContactProfileTabs
+        locale={locale}
+        interactions={timelineInteractions}
+        commitments={commitments}
+      />
     </section>
   );
 }

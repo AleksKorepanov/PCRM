@@ -1,5 +1,10 @@
 import { randomUUID } from "crypto";
 
+import {
+  reassignCommitmentParties,
+  restoreCommitments,
+  snapshotCommitments,
+} from "@/lib/commitments";
 import { reassignContactRelations, restoreRelations, snapshotRelations } from "@/lib/relations";
 
 export type ContactVisibility = "public" | "private";
@@ -381,6 +386,7 @@ export function mergeContacts(params: {
 
   const contactSnapshot = new Map(store.contacts);
   const relationsSnapshot = snapshotRelations();
+  const commitmentsSnapshot = snapshotCommitments();
 
   const fieldSource = (field: ContactMergeField): Contact => {
     const selectedId = selections?.[field];
@@ -424,10 +430,16 @@ export function mergeContacts(params: {
       fromContactId: contact.id,
       toContactId: survivor.id,
     });
+    reassignCommitmentParties({
+      workspaceId,
+      fromContactId: contact.id,
+      toContactId: survivor.id,
+    });
   });
   if (!store.contacts.has(survivor.id)) {
     store.contacts = contactSnapshot;
     restoreRelations(relationsSnapshot);
+    restoreCommitments(commitmentsSnapshot);
     return undefined;
   }
   return merged;
