@@ -68,6 +68,10 @@ export function canManageCommitments(role: Role): boolean {
   return roleAtLeast(role, "assistant");
 }
 
+export function canManageCommunities(role: Role): boolean {
+  return roleAtLeast(role, "assistant");
+}
+
 export function canRunResearch(role: Role): boolean {
   return roleAtLeast(role, "member");
 }
