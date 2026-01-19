@@ -127,6 +127,56 @@ export function createInteractionParticipant(params: {
   return participant;
 }
 
+export function listInteractionParticipantsForInteraction(params: {
+  workspaceId: string;
+  interactionId: string;
+}): InteractionParticipant[] {
+  const store = getRelationsStore();
+  return store.interactionParticipants.filter(
+    (participant) =>
+      participant.workspaceId === params.workspaceId &&
+      participant.interactionId === params.interactionId
+  );
+}
+
+export function replaceInteractionParticipants(params: {
+  workspaceId: string;
+  interactionId: string;
+  participants: { contactId: string; role?: string }[];
+}): InteractionParticipant[] {
+  const store = getRelationsStore();
+  store.interactionParticipants = store.interactionParticipants.filter(
+    (participant) =>
+      !(
+        participant.workspaceId === params.workspaceId &&
+        participant.interactionId === params.interactionId
+      )
+  );
+  const created = params.participants.map((participant) =>
+    createInteractionParticipant({
+      workspaceId: params.workspaceId,
+      interactionId: params.interactionId,
+      contactId: participant.contactId,
+      role: participant.role,
+    })
+  );
+  return created;
+}
+
+export function removeInteractionParticipants(params: {
+  workspaceId: string;
+  interactionId: string;
+}): void {
+  const store = getRelationsStore();
+  store.interactionParticipants = store.interactionParticipants.filter(
+    (participant) =>
+      !(
+        participant.workspaceId === params.workspaceId &&
+        participant.interactionId === params.interactionId
+      )
+  );
+}
+
 export function createCommitment(params: {
   workspaceId: string;
   contactId: string;

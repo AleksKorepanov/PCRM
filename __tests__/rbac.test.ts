@@ -1,7 +1,9 @@
 import {
   canChangeRoles,
   canEditContacts,
+  canEditInteractions,
   canInviteMembers,
+  canCreateInteractions,
   canViewAudit,
   isValidRole,
   roleAtLeast,
@@ -40,5 +42,13 @@ describe("rbac", () => {
     expect(canEditContacts("assistant")).toBe(true);
     expect(canEditContacts("member")).toBe(true);
     expect(canEditContacts("read-only")).toBe(false);
+  });
+
+  it("limits interaction creation and editing", () => {
+    expect(canCreateInteractions("member")).toBe(true);
+    expect(canCreateInteractions("assistant")).toBe(false);
+    expect(canCreateInteractions("read-only")).toBe(false);
+    expect(canEditInteractions("assistant")).toBe(true);
+    expect(canEditInteractions("member")).toBe(true);
   });
 });
