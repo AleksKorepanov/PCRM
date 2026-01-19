@@ -8,6 +8,10 @@ import {
 } from "@/lib/contacts";
 import {
   createCommitment,
+  listCommitmentsForContact,
+  resetCommitmentsStore,
+} from "@/lib/commitments";
+import {
   createCommunityMembership,
   createInteractionParticipant,
   createNeedOffer,
@@ -20,6 +24,7 @@ describe("contacts merge", () => {
   beforeEach(() => {
     resetContactsStore();
     resetRelationsStore();
+    resetCommitmentsStore();
   });
 
   it("merges contacts and reassigns relations", () => {
@@ -48,7 +53,12 @@ describe("contacts merge", () => {
       interactionId: "interaction-1",
       contactId: source.id,
     });
-    createCommitment({ workspaceId, contactId: source.id, status: "open" });
+    createCommitment({
+      workspaceId,
+      title: "Deliver roadmap",
+      status: "open",
+      parties: [{ contactId: source.id, role: "owed_by" }],
+    });
     createNeedOffer({ workspaceId, contactId: source.id, type: "need", status: "open" });
     createRelationshipEdge({
       workspaceId,
@@ -77,10 +87,17 @@ describe("contacts merge", () => {
     const relations = listRelations(workspaceId);
     expect(relations.communityMemberships[0]?.contactId).toBe(survivor.id);
     expect(relations.interactionParticipants[0]?.contactId).toBe(survivor.id);
-    expect(relations.commitments[0]?.contactId).toBe(survivor.id);
     expect(relations.needsOffers[0]?.contactId).toBe(survivor.id);
     expect(relations.relationshipEdges[0]?.fromContactId).toBe(survivor.id);
     expect(relations.relationshipEdges[0]?.introducedByContactId).toBe(survivor.id);
+
+    const commitments = listCommitmentsForContact({
+      workspaceId,
+      contactId: survivor.id,
+      roles: ["owed_by"],
+    });
+    expect(commitments).toHaveLength(1);
+    expect(commitments[0]?.parties[0]?.contactId).toBe(survivor.id);
   });
 
   it("does not mutate state when merge fails", () => {

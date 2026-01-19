@@ -19,14 +19,6 @@ export type InteractionParticipant = {
   createdAt: string;
 };
 
-export type CommitmentRecord = {
-  id: string;
-  workspaceId: string;
-  contactId: string;
-  status: "open" | "in_progress" | "fulfilled" | "broken" | "canceled";
-  createdAt: string;
-};
-
 export type NeedOfferRecord = {
   id: string;
   workspaceId: string;
@@ -48,7 +40,6 @@ export type RelationshipEdge = {
 type RelationsStore = {
   communityMemberships: CommunityMembership[];
   interactionParticipants: InteractionParticipant[];
-  commitments: CommitmentRecord[];
   needsOffers: NeedOfferRecord[];
   relationshipEdges: RelationshipEdge[];
 };
@@ -70,7 +61,6 @@ function getRelationsStore(): RelationsStore {
     globalStore[relationsKey] = {
       communityMemberships: [],
       interactionParticipants: [],
-      commitments: [],
       needsOffers: [],
       relationshipEdges: [],
     };
@@ -82,7 +72,6 @@ export function resetRelationsStore(): void {
   const store = getRelationsStore();
   store.communityMemberships = [];
   store.interactionParticipants = [];
-  store.commitments = [];
   store.needsOffers = [];
   store.relationshipEdges = [];
 }
@@ -177,23 +166,6 @@ export function removeInteractionParticipants(params: {
   );
 }
 
-export function createCommitment(params: {
-  workspaceId: string;
-  contactId: string;
-  status: CommitmentRecord["status"];
-}): CommitmentRecord {
-  const store = getRelationsStore();
-  const commitment: CommitmentRecord = {
-    id: randomUUID(),
-    workspaceId: params.workspaceId,
-    contactId: params.contactId,
-    status: params.status,
-    createdAt: nowIso(),
-  };
-  store.commitments.push(commitment);
-  return commitment;
-}
-
 export function createNeedOffer(params: {
   workspaceId: string;
   contactId: string;
@@ -241,9 +213,6 @@ export function listRelations(workspaceId: string): RelationsStore {
     interactionParticipants: store.interactionParticipants.filter(
       (item) => item.workspaceId === workspaceId
     ),
-    commitments: store.commitments.filter(
-      (item) => item.workspaceId === workspaceId
-    ),
     needsOffers: store.needsOffers.filter((item) => item.workspaceId === workspaceId),
     relationshipEdges: store.relationshipEdges.filter(
       (item) => item.workspaceId === workspaceId
@@ -256,7 +225,6 @@ export function snapshotRelations(): RelationsSnapshot {
   return {
     communityMemberships: [...store.communityMemberships],
     interactionParticipants: [...store.interactionParticipants],
-    commitments: [...store.commitments],
     needsOffers: [...store.needsOffers],
     relationshipEdges: [...store.relationshipEdges],
   };
@@ -266,7 +234,6 @@ export function restoreRelations(snapshot: RelationsSnapshot): void {
   const store = getRelationsStore();
   store.communityMemberships = [...snapshot.communityMemberships];
   store.interactionParticipants = [...snapshot.interactionParticipants];
-  store.commitments = [...snapshot.commitments];
   store.needsOffers = [...snapshot.needsOffers];
   store.relationshipEdges = [...snapshot.relationshipEdges];
 }
@@ -289,12 +256,6 @@ export function reassignContactRelations(params: {
     participant.workspaceId === workspaceId && participant.contactId === fromContactId
       ? { ...participant, contactId: toContactId }
       : participant
-  );
-
-  store.commitments = store.commitments.map((commitment) =>
-    commitment.workspaceId === workspaceId && commitment.contactId === fromContactId
-      ? { ...commitment, contactId: toContactId }
-      : commitment
   );
 
   store.needsOffers = store.needsOffers.map((record) =>

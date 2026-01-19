@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
+import { CommitmentCard, CommitmentCardData } from "@/components/commitments/commitment-card";
 import { Card } from "@/components/ui/card";
 import type { InteractionWithRelations } from "@/lib/interactions";
 
@@ -30,6 +31,7 @@ const tabsByLocale = {
 type ContactProfileTabsProps = {
   locale: "ru" | "en";
   interactions: TimelineInteraction[];
+  commitments: CommitmentCardData[];
 };
 
 export type TimelineInteraction = InteractionWithRelations & {
@@ -69,6 +71,7 @@ const statusLabels: Record<
 export function ContactProfileTabs({
   locale,
   interactions,
+  commitments,
 }: ContactProfileTabsProps) {
   const tabs = tabsByLocale[locale];
   const [activeTab, setActiveTab] = useState(tabs[0]);
@@ -77,20 +80,23 @@ export function ContactProfileTabs({
       ? "Пока нет данных в этом разделе."
       : "No data in this section yet.";
   const timelineLabel = locale === "ru" ? "Таймлайн" : "Timeline";
+  const commitmentsLabel = locale === "ru" ? "Обязательства" : "Commitments";
 
-  const content = useMemo(() => {
-    if (activeTab === timelineLabel) {
-      if (interactions.length === 0) {
-        return (
-          <div className="text-sm text-slate-600">
-            {locale === "ru"
-              ? "Пока нет взаимодействий."
-              : "No interactions yet."}
-          </div>
-        );
-      }
+  let content = (
+    <div className="text-sm text-slate-600">
+      {emptyCopy} <span className="text-slate-400">({activeTab})</span>
+    </div>
+  );
 
-      return (
+  if (activeTab === timelineLabel) {
+    content =
+      interactions.length === 0 ? (
+        <div className="text-sm text-slate-600">
+          {locale === "ru"
+            ? "Пока нет взаимодействий."
+            : "No interactions yet."}
+        </div>
+      ) : (
         <div className="space-y-4">
           {interactions.map((interaction) => {
             const occurredAt = new Date(interaction.occurredAt);
@@ -198,14 +204,28 @@ export function ContactProfileTabs({
           })}
         </div>
       );
-    }
+  }
 
-    return (
-      <div className="text-sm text-slate-600">
-        {emptyCopy} <span className="text-slate-400">({activeTab})</span>
-      </div>
-    );
-  }, [activeTab, emptyCopy, interactions, locale, timelineLabel]);
+  if (activeTab === commitmentsLabel) {
+    content =
+      commitments.length === 0 ? (
+        <div className="text-sm text-slate-600">
+          {locale === "ru"
+            ? "Нет обязательств для этого контакта."
+            : "No commitments for this contact yet."}
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {commitments.map((commitment) => (
+            <CommitmentCard
+              key={commitment.id}
+              locale={locale}
+              commitment={commitment}
+            />
+          ))}
+        </div>
+      );
+  }
 
   return (
     <Card className="space-y-4">
